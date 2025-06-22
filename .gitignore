@@ -1,0 +1,10 @@
+data.xlsx
+parser.log
+credentials.json
+testparse.py
+sellerimg.jpg
+page.html
+.env
+.idea/
+.venv/
+__pycache__/
