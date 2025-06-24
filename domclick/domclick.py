@@ -3,6 +3,11 @@ import subprocess
 
 import requests
 from bs4 import BeautifulSoup
+from sqlalchemy.dialects.postgresql import insert
+
+
+def price_str_to_int(price):
+    print(int(price[:price.find("₽")].replace(" ", "")))
 
 
 class DomclickParser:
@@ -39,7 +44,7 @@ class DomclickParser:
         --header 'Accept-Language:  ru' \
         --header 'Cache-Control:  max-age=0' \
         --header 'Connection:  keep-alive' \
-        --header 'Cookie:  ns_session=26fa591d-e840-412b-805d-7f1dfa05de57; RETENTION_COOKIES_NAME=bdfceb74d16f41a784fff5be181ee245:2cBTC3YfjqDTKS4268kkSzINl5s; sessionId=61273146bd344a5fb366db51c95b25e2:w5HtnkOXBfID1zuHYwWZsKO1qpQ; UNIQ_SESSION_ID=dc8f1f4329314d23be19ee209fee6a24:a12bU-YF-TH98nWp2cpCayCDDgA; is-green-day-banner-hidden=true; is-ddf-banner-hidden=true; _ym_uid=1750357480254316545; _ym_d=1750357480; logoSuffix=; iosAppLink=; region={%22data%22:{%22name%22:%22%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0%22%2C%22kladr%22:%2277%22%2C%22guid%22:%221d1463ae-c80f-4d19-9331-a1b68a85b553%22}%2C%22isAutoResolved%22:true}; ___dmpkit___=97312c75-8353-4e31-9630-ed67ecb8d188; adtech_uid=66ff27b4-585a-4bda-85b2-5242f64ecc55%3Adomclick.ru; top100_id=t1.7711713.624246709.1750357480212; _sv=SV1.15b5e506-2145-49a9-99bf-52b42b32af25.1750357504; adrcid=AtJRv9YZY062RbOPALSJIEQ; iosAppAvailable=true; tmr_lvid=306cee3be45f4c50f043498dfc39a159; tmr_lvidTS=1750357656518; qrator_jsr=v2.0.1750516050.391.59168f1bpc7NdfVW|LYhCZRl8JJJzffTN|DPwbGWacqws6tAy4NOKXVmZkrQZvzIWApJ17GsfrUwrloU/52HglbWWjktGyWkHCUt2av4xkmdFz0IPnev7itA==-6PzjmB5SEy6Y65PrxWGVTEbnvmI=-00; qrator_jsid2=v2.0.1750516050.391.59168f1bpc7NdfVW|kFeOJhC26XAYhr1H|R9aOqd3zrEV9MioviV6nvBt4+GFpUnGaWFMnpxtes8Ce9ngsALta8Dgq3ahWIzUNnAblRhSn0PAGdqAO/kURvOqWiJ5t63Y2pr4D/AgNzcId7fVxMB8r+3OUU9qPc0jygON731HdLEPw+QIhMdNxMw==-lnl9e4D26fdIARc14eJRT+9gF/Q=; _ym_isad=2; _sas.2c534172f17069dd8844643bb4eb639294cd4a7a61de799648e70dc86bc442b9=SV1.15b5e506-2145-49a9-99bf-52b42b32af25.1750357504.1750516052; _visitId=d9a7218f-7e36-43c6-970e-b769331668fe-f4f0dcc432ac8ba6; adrdel=1750516052661; autoDefinedRegion=1d1463ae-c80f-4d19-9331-a1b68a85b553:1d1463ae-c80f-4d19-9331-a1b68a85b553:%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0:; tmr_detect=0%7C1750516055287; t3_sid_7711713=s1.935314493.1750516052043.1750516066433.2.5.1.0; tmr_reqNum=8' \
+        --header 'Cookie:  ns_session=2b6ed433-8fca-46b3-a920-ec68cb0dd957; RETENTION_COOKIES_NAME=2608b6a465f34932a3ca179716216078:gebvfIP-8dXlh0lXi9sNQHthvYQ; sessionId=e40b9560ed0a4ef1af66d0fbdceab62e:-bYl2M0UF4Qtag-kcMtvn_EGRxA; UNIQ_SESSION_ID=e530411f5efe4baab4173a3efe93079f:y8wKUyyfdcHoq2F-YATVxSFPYMQ; is-green-day-banner-hidden=true; is-ddf-banner-hidden=true; _ym_uid=1750664453215549468; _ym_d=1750664453; logoSuffix=; iosAppLink=; _ym_isad=2; ___dmpkit___=02218970-ef99-4a96-9094-52101856fba8; adtech_uid=d0ec572d-ec13-4df0-9a57-dee782990bd3%3Adomclick.ru; top100_id=t1.7711713.1198048448.1750664453594; region={%22data%22:{%22name%22:%22%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0%22%2C%22kladr%22:%2277%22%2C%22guid%22:%221d1463ae-c80f-4d19-9331-a1b68a85b553%22}%2C%22isAutoResolved%22:true}; _sv=SV1.106a5417-3a0f-42ed-9580-6322173e1f83.1750664448; autoDefinedRegion=1d1463ae-c80f-4d19-9331-a1b68a85b553:1d1463ae-c80f-4d19-9331-a1b68a85b553:%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0:; tmr_lvid=6479d3e3d58e595e507acd918c6b1d15; tmr_lvidTS=1750664454519; adrdel=1750664457538; adrcid=A6UoYfSrq6eXjayFuzR-JRQ; iosAppAvailable=true; is-lotto-banner-hidden=true; is-ddd-banner-hidden=true; tmr_detect=0%7C1750667001442; tmr_reqNum=16; qrator_jsr=v2.0.1750674726.068.5e19ade7eAU36ayB|qgOy5PVD4TAEiAiN|C/6b8nu4Qsor4VkMXHzRmi4fcknJmvrpOYiVHrbViO55GsbwTH/V5+F08zAruWUPTOYSE9UzVtvLIxaK79wmZg==-xdPrqgxp3PXlVTTDAMHBvsZCBRk=-00; t3_sid_7711713=s1.816248871.1750674554627.1750674726143.2.6.0.1; _sas.2c534172f17069dd8844643bb4eb639294cd4a7a61de799648e70dc86bc442b9=SV1.106a5417-3a0f-42ed-9580-6322173e1f83.1750664448.1750674726; _sas=SV1.106a5417-3a0f-42ed-9580-6322173e1f83.1750664448.1750674726; qrator_jsid2=v2.0.1750674726.068.5e19ade7eAU36ayB|UrAvQwJVInCX9IQa|0m1DTHy+L++6oywPgRjTAnj7UUqeg+9JskWo+ioNuCnxsS6OzqkhkQOA9MoX98uzbCDkG8xY10zvoCqu/3GBrzaHX30UI8cIJWWQZFR3p4/L49NbjkrR9us1uIUYsTTRdDKErMjsIz93O9V3PjbE5Q==-9maIGtkjlJ5gQBby4QgS6yVhxIc=' \
         --header 'Host:  domclick.ru' \
         --header 'Referer:  https://domclick.ru/?utm_referrer=https%3A%2F%2Fwww.google.com%2F' \
         --header 'Sec-Fetch-Dest:  document' \
@@ -62,9 +67,17 @@ class DomclickParser:
             soup = BeautifulSoup(txt, features="html.parser")
             blocks = soup.find_all("div", {"class": "YQzvsc"})
             for block in blocks:
-                texts = block.find_all("span", {"class": "_6KKuHL iaB6kz"})
-                for text in texts:
-                    print(text.text, end=" ")
+                title = " ".join([text.text for text in block.find_all("span", {"class": "_6KKuHL iaB6kz"})])
+                description = block.find("div", {"class": "_8MNxzN"}).text
+                price = block.find("p", {"class": "_5oAgZI Z4r7pA"})
+                published = block.find("div", {"class": "MekcYs"})
+                url = block.find("a", {"class": "Q7TuMJ"}, href=True)
+                price_str_to_int(price.text)
+                print(price.text)
+                # print(price.text)
+                # print(desc)
+                # for text in texts:
+                #     print(text.text, end=" ")
                 print("")
 
             await asyncio.sleep(10)
@@ -78,18 +91,18 @@ class DomclickManager:
     def new_task(self, offer_types, rooms, price_lims, deal_type, location):
         str_uid = f"{offer_types} - {rooms} - {price_lims} - {deal_type} - {location}"
         if str_uid not in self.tasks:
-            self.tasks[str_uid] = DomClickTask(offer_types, rooms, price_lims, deal_type, location)
-            self.loop.create_task(self.tasks[str_uid].search())
+            self.tasks[str_uid] = DomclickParser(offer_types, rooms, price_lims, deal_type, location)
+            asyncio.run(self.tasks[str_uid].search())
 
     def stop_task(self, offer_types, rooms, price_lims, deal_type, location):
         self.tasks[str_uid].is_active = False
 
 
-p = DomClickParser()
+p = DomclickManager()
 p.new_task(
     ["flat"],
     ["st"],
     [None, None],
-    "rent",
+    "sale",
     2299,
 )

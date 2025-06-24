@@ -7,4 +7,5 @@ page.html
 .env
 .idea/
 .venv/
+venv/
 __pycache__/
