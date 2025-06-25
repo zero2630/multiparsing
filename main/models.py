@@ -4,7 +4,7 @@ from enum import unique
 
 from sqlalchemy import ForeignKey
 from sqlalchemy import func
-from sqlalchemy import String, Text, DateTime, BigInteger, Date, Float, Boolean
+from sqlalchemy import String, Text, DateTime, BigInteger, Date, Float, Boolean, JSON
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -18,7 +18,6 @@ class Base(DeclarativeBase):
 class Announcement(Base):
     __tablename__ = "announcement"
     id: Mapped[int] = mapped_column(primary_key=True, unique=True)
-    date_added: Mapped[date] = mapped_column(Date, server_default=func.now())
     publication_date: Mapped[date] = mapped_column(Date, nullable=True)
     title: Mapped[str] = mapped_column(String(500))
     price: Mapped[float] = mapped_column(Float, nullable=True)
@@ -28,6 +27,17 @@ class Announcement(Base):
     url: Mapped[str] = mapped_column(Text, nullable=True, unique=True)
     status: Mapped[bool] = mapped_column(Boolean, nullable=True)
     # category_id: Mapped[int]
+    created_at: Mapped[date] = mapped_column(Date, server_default=func.now())
+
+
+class ParserTask(Base):
+    __tablename__ = "parser_task"
+    id: Mapped[int] = mapped_column(primary_key=True, unique=True)
+    search_query: Mapped[dict] = mapped_column(JSON)
+    periodicity: Mapped[int]
+    status: Mapped[str] = mapped_column(String(30))
+    created_at: Mapped[date] = mapped_column(Date, server_default=func.now())
+
 
 
 class BotUser(Base):

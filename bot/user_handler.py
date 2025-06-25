@@ -7,7 +7,7 @@ from aiogram.filters import CommandStart, Command
 from sqlalchemy import select, update, insert
 
 from main.database import async_session_maker
-from main.models import BotUser
+from main.models import BotUser, ParserTask
 from bot.keyboards import reply
 
 router = Router()
@@ -25,6 +25,45 @@ async def command_start(message: Message, command: Command):
     await message.answer("hello", reply_markup=reply.main)
 
 
+@router.message(F.text == "run1")
+async def run1(message: Message, state: FSMContext):
+    async with async_session_maker() as session:
+        stmt = insert(ParserTask).values(
+            search_query={
+                "offer_types": ["flat"],
+                "rooms": ["st"],
+                "price_lims": [None, None],
+                "deal_type": "sale",
+                "location": 2299
+            },
+            periodicity=0,
+            status="active"
+        )
+        await session.execute(stmt)
+        await session.commit()
+    await state.clear()
+    await message.answer("task created", reply_markup=reply.main)
+
+
+@router.message(F.text == "создать поиск")
+async def ct(message: Message, state: FSMContext):
+    async with async_session_maker() as session:
+        stmt = update(ParserTask).values(status="inactive")
+        await session.execute(stmt)
+        await session.commit()
+    await state.clear()
+    await message.answer("task deactivated", reply_markup=reply.main)
+
+
+
+@router.message(F.text == "stop1")
+async def stop1(message: Message, state: FSMContext):
+    async with async_session_maker() as session:
+        stmt = update(ParserTask).values(status="inactive")
+        await session.execute(stmt)
+        await session.commit()
+    await state.clear()
+    await message.answer("task deactivated", reply_markup=reply.main)
 
 
 @router.message(F.text == "отмена")
