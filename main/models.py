@@ -4,7 +4,8 @@ from enum import unique
 
 from sqlalchemy import ForeignKey
 from sqlalchemy import func
-from sqlalchemy import String, Text, DateTime, BigInteger, Date, Float, Boolean, JSON
+from sqlalchemy import String, Text, DateTime, BigInteger, Date, Float, Boolean
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -33,11 +34,18 @@ class Announcement(Base):
 class ParserTask(Base):
     __tablename__ = "parser_task"
     id: Mapped[int] = mapped_column(primary_key=True, unique=True)
-    search_query: Mapped[dict] = mapped_column(JSON)
+    search_query: Mapped[dict] = mapped_column(JSONB, unique=True)
     periodicity: Mapped[int]
     status: Mapped[str] = mapped_column(String(30))
     created_at: Mapped[date] = mapped_column(Date, server_default=func.now())
 
+
+class UserToTask(Base):
+    __tablename__ = "user_to_task"
+    id: Mapped[int] = mapped_column(primary_key=True, unique=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("bot_user.telegram_id"))
+    task_id: Mapped[int] = mapped_column(ForeignKey("parser_task.id"))
+    created_at: Mapped[date] = mapped_column(Date, server_default=func.now())
 
 
 class BotUser(Base):
