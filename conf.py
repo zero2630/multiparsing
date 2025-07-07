@@ -12,4 +12,7 @@ DB_PASS = os.getenv("DB_PASS", None)
 DB_PORT = os.getenv("DB_PORT", None)
 DB_USER = os.getenv("DB_USER", None)
 
+CHROME_VERSION = os.environ.get("CHROME_VERSION")
+CHROME_PATH = os.environ.get("CHROME_PATH")
+
 PARSER_TYPE = os.getenv("PARSER_TYPE", None)

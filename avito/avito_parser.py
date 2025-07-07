@@ -35,15 +35,15 @@ avito_urls = {
     "seller_info": f"https://m.avito.ru/api/1/user/profile/items?key={TOKEN}",
 }
 
-proxies = {
-    "http": "http://EDum8A:kuxkYq7Av6gu@fproxy.site:11296",
-    "https": "http://EDum8A:kuxkYq7Av6gu@fproxy.site:11296",
-}
+
+def price_str_to_int(price):
+    return int(price[:price.find("₽")].replace("\xa0", "").replace("от", ""))
 
 
 ## класс, через который производится получение и обработка данных о товарах
 class AvitoParser:
-    def __init__(self):
+    def __init__(self, task_id):
+        self.task_id = task_id
         self.item_name = None  # имя обрабатываемого товара
         self.region_name = (
             None  # название региона для поиска (Москва, Ярославль, и т.д.)
@@ -53,7 +53,6 @@ class AvitoParser:
         self.max_price = None  # максимальная цена для поиска
         self.last_time = None  # начальная дата для поиска в timestamp формате
         self.region_id = None  # id региона для поиска
-        self.items_ids = []  # id полученных товаров
         self.headers = {
             "authority": "m.avito.ru",
             "pragma": "no-cache",
@@ -73,7 +72,7 @@ class AvitoParser:
         cookies = ""  # инициализация куки для запроса
 
         # выгрузка списка куки
-        f = open("cookies.json", "r")
+        f = open("./avito/cookies.json", "r")
         cookies_data = json.load(f)
         f.close()
 
@@ -179,45 +178,27 @@ class AvitoParser:
 
         for item in json_content["result"]["items"]:
             if item["type"] == "item":  # проверка что это именно товар, а не услуга
-                if (
-                    item["value"]["id"] not in self.items_ids
-                    and item["type"] == "item"
-                    and "за услугу" not in item["value"]["price"]
-                ):  # валидация товара
-                    self.items_ids.append(item["value"]["id"])  # сохранение id товара
-                    item_val = item["value"]  # получение основной информации о товаре
-                    if True:  # проверка продавца
-                        if False:
-                            try:
-                                asyncio.run(
-                                    bot.send_msg(
-                                        f"Появился новый товар!\n"
-                                        f"Название: {item_val['title']}\n"
-                                        f"Цена: {item_val['price']}\n"
-                                        f"Время появления: {datetime.fromtimestamp(item_val['time']).strftime('%d.%m.%Y')}\n"
-                                        f"Ссылка: {'https://avito.ru' + item_val['uri']}"
-                                    )
-                                )  # вызов функции для отправки сообщения в тг канал
-                            except Exception as e:
-                                logger.error(
-                                    f"telegram bot error: {e}"
-                                )  # логгирование ошибки об отправке сообщения ботом
-
-                        # добавление информации о товаре для дальнейшего обновления таблицы
-                        # sheets_manager.add_row(
-                        #     [item_val['title'], item_val['price']['current'], "-", 'https://avito.ru' + item_val['uri'],
-                        #      item_val["sellerInfo"]["name"]])
-                        async with async_session_maker() as session:
-                            stmt = insert(Announcement).values(
-                                title=item_val['title'],
-                                description="",
-                                price=item_val['price']['current'],
-                                url='https://avito.ru' + item_val['uri'],
-                                publication_date=datetime.fromtimestamp(item_val['time']).strftime('%d.%m.%Y'),
-                            )
-                            stmt = stmt.on_conflict_do_nothing(index_elements=["url"])
-                            await session.execute(stmt)
-                            await session.commit()
+                if (item["type"] == "item" and "за услугу" not in item["value"]["price"]):
+                    item_val = item["value"]
+                    url = 'https://avito.ru' + item_val['uri']
+                    async with async_session_maker() as session:
+                        stmt = insert(Announcement).values(
+                            title=item_val['title'],
+                            description="",
+                            price=price_str_to_int(item_val['price']['current']),
+                            url=url,
+                            img_url=item_val["galleryItems"][0]["value"]["678x678"],
+                            status="avito"
+                        )
+                        stmt = stmt.on_conflict_do_nothing(index_elements=["url"])
+                        await session.execute(stmt)
+                        announcement_id = (await session.execute(select(Announcement.id).where(Announcement.url == url))).first()[0]
+                        stmt = insert(AnnouncementToTask).values(announcement_id=announcement_id,
+                                                                 task_id=self.task_id,
+                                                                 uniq_val=f"{announcement_id}-{self.task_id}")
+                        stmt = stmt.on_conflict_do_nothing(index_elements=["uniq_val"])
+                        await session.execute(stmt)
+                        await session.commit()
 
         # sheets_manager.push_rows()  # загрузка всех полученных товаров в таблицу
 
@@ -236,7 +217,7 @@ class AvitoManager:
                 else:
                     for task in tasks:
                         data = task[0].search_query
-                        p = AvitoParser()
+                        p = AvitoParser(task[0].id)
                         p.get_params(
                             item_name=data["item_name"],
                             region_name=data["region_name"],

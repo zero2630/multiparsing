@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:14.11
+    env_file:
+      - .env
+    command: -p 5433
+    expose:
+      - 5433
+    ports:
+      - 5433:5433
+    volumes:
+      - database:/var/lib.postgresql/data
+
+  app:
+    build:
+      context: .
+    env_file:
+      - .env
+    container_name: app
+    depends_on:
+      - db
+    command: [ "/multiparsing/app.sh" ]
+    volumes:
+      - .:/app
+
+  domclick:
+    build:
+      context: .
+    env_file:
+      - .env
+    container_name: domclick_parser
+    depends_on:
+      - db
+      - app
+    command: [ "/multiparsing/domclick.sh" ]
+    volumes:
+      - .:/domclick
+
+  avito:
+    build:
+      context: .
+    env_file:
+      - .env
+    container_name: avito_parser
+    depends_on:
+      - db
+      - app
+    command: [ "/multiparsing/avito.sh" ]
+    volumes:
+      - .:/avito
+
+volumes:
+  database:

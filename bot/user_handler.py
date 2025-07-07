@@ -30,14 +30,22 @@ async def command_start(message: Message, command: Command):
     await message.answer("hello", reply_markup=reply.main)
 
 
-@router.message(F.text == "создать поиск")
-async def create_search(message: Message, state: FSMContext):
-    if PARSER_TYPE == "domclick":
-        await state.set_state(NewParserTask.deal_type)
-        await message.answer("выберите тип сделки:", reply_markup=reply.deal_type)
-    elif PARSER_TYPE == "avito":
+@router.message(F.text == "отмена")
+async def cancel(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("действие отменено", reply_markup=reply.main)
+
+
+@router.message(F.text == "создать поиск (avito)")
+async def create_search_avito(message: Message, state: FSMContext):
         await state.set_state(AvitoParserTask.query)
         await message.answer("введите поисковой запрос:", reply_markup=reply.cancel)
+
+
+@router.message(F.text == "создать поиск (domclick)")
+async def create_search_domclick(message: Message, state: FSMContext):
+    await state.set_state(NewParserTask.deal_type)
+    await message.answer("выберите тип сделки:", reply_markup=reply.deal_type)
 
 
 @router.message(AvitoParserTask.query, F.text)
@@ -91,7 +99,7 @@ async def avito_price(message: Message, state: FSMContext):
             },
             periodicity=0,
             status="avito"
-        ).on_conflict_do_update(index_elements=["search_query"], set_=dict(status=PARSER_TYPE)).returning(ParserTask.id)
+        ).on_conflict_do_update(index_elements=["search_query"], set_=dict(status="avito")).returning(ParserTask.id)
         parser_task_id = (await session.execute(stmt)).first()[0]
 
         stmt = insert(UserToTask).values(user_id=message.from_user.id, task_id=parser_task_id, uniq_val=f"{message.from_user.id}-{parser_task_id}")
@@ -149,7 +157,7 @@ async def price_lims(message: Message, state: FSMContext):
 @router.message(F.text == "мои подписки")
 async def stop(message: Message, state: FSMContext):
     async with async_session_maker() as session:
-        stmt = select(ParserTask).where(ParserTask.id.in_(select(UserToTask.task_id).where(UserToTask.user_id == message.from_user.id))).where(ParserTask.status == PARSER_TYPE)
+        stmt = select(ParserTask).where(ParserTask.id.in_(select(UserToTask.task_id).where(UserToTask.user_id == message.from_user.id)))
         tasks = (await session.execute(stmt)).all()
         tasks_id = [task[0].id for task in tasks]
 
@@ -161,20 +169,26 @@ async def tap_dislike(call: CallbackQuery, callback_data: inline.Subs):
     deal_type = {"sale": "покупка", "rent": "аренда"}
 
     async with async_session_maker() as session:
-        stmt = select(ParserTask.search_query).where(ParserTask.id == callback_data.selected_task)
+        stmt = select(ParserTask).where(ParserTask.id == callback_data.selected_task)
         res = (await session.execute(stmt)).first()[0]
+        query = res.search_query
 
-    if PARSER_TYPE == "domclick":
-        await call.message.edit_text(f"Тип сделки: {deal_type[res['deal_type']]}\n"
-                                 f"Минимальная цена: {res['price_lims'][0]}\n"
-                                 f"Максимальная цена: {res['price_lims'][1]}\n", reply_markup=inline.sub_info(callback_data.selected_task))
-    elif PARSER_TYPE == "avito":
-        await call.message.edit_text(f"Поисковый запрос: {res["item_name"]}\n"
-                                     f"Регион: {res["region_name"]}\n"
-                                     f"С какой даты искать: {res["last_time_str"]}\n"
-                                     f"Минимальная цена: {res["min_price"]}\n"
-                                     f"Максимальная цена: {res["max_price"]}\n",
+
+    if res.status == "domclick":
+        await call.message.edit_text(f"Тип сделки: {deal_type[query['deal_type']]}\n"
+                                f"Минимальная цена: {query['price_lims'][0]}\n"
+                                f"Максимальная цена: {query['price_lims'][1]}\n\n"
+                                f"{res.status}", reply_markup=inline.sub_info(callback_data.selected_task))
+    elif res.status == "avito":
+        await call.message.edit_text(f"Поисковый запрос: {query['item_name']}\n"
+                                     f"Регион: {query['region_name']}\n"
+                                     f"С какой даты искать: {query['last_time_str']}\n"
+                                     f"Минимальная цена: {query['min_price']}\n"
+                                     f"Максимальная цена: {query['max_price']}\n\n"
+                                     f"{res.status}",
                                      reply_markup=inline.sub_info(callback_data.selected_task))
+    else:
+        await call.message.edit_text("произошла ошибка", reply_markup=None)
 
 
 @router.callback_query(inline.Subs.filter(F.action == "del_task"))
@@ -186,7 +200,7 @@ async def tap_dislike(call: CallbackQuery, callback_data: inline.Subs):
         stmt = select(UserToTask).where(UserToTask.task_id == callback_data.selected_task)
         res = (await session.execute(stmt)).first()
         if not res:
-            stmt = delete(ParserTask).where(ParserTask.id == callback_data.selected_task)
+            stmt = update(ParserTask).where(ParserTask.id == callback_data.selected_task).values(status="inactive")
             await session.execute(stmt)
             await session.commit()
 
@@ -200,12 +214,3 @@ async def stop(message: Message, state: FSMContext):
         await session.execute(stmt)
         await session.commit()
     await message.answer("stopped", reply_markup=reply.main)
-
-
-
-@router.message(F.text == "отмена")
-async def cancel(message: Message, state: FSMContext):
-    await state.clear()
-    await message.answer("действие отменено", reply_markup=reply.main)
-
-

@@ -4,8 +4,10 @@ credentials.json
 testparse.py
 sellerimg.jpg
 page.html
+*cookies_tmp.txt
 .env
 .idea/
 .venv/
 venv/
 __pycache__/
+chrome/

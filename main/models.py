@@ -27,7 +27,8 @@ class Announcement(Base):
     # region_id: Mapped[int]
     # seller_id: Mapped[int]
     url: Mapped[str] = mapped_column(Text, nullable=True, unique=True)
-    status: Mapped[bool] = mapped_column(Boolean, nullable=True)
+    img_url: Mapped[str] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(15), nullable=True)
     # category_id: Mapped[int]
     created_at: Mapped[date] = mapped_column(Date, server_default=func.now())
 

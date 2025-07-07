@@ -3,7 +3,8 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 main = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text="создать поиск")],
+        [KeyboardButton(text="создать поиск (avito)")],
+        [KeyboardButton(text="создать поиск (domclick)")],
         [KeyboardButton(text="мои подписки")],
     ],
     resize_keyboard=True,

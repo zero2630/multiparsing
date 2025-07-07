@@ -7,9 +7,11 @@ from sqlalchemy import select
 from sqlalchemy.dialects.mysql import insert
 
 from user_handler import router
-from conf import BOT_TOKEN
+from conf import BOT_TOKEN, PARSER_TYPE
 from main.database import async_session_maker
 from main.models import BotUser, UserToTask, AnnouncementToTask, Announcement, ParserTask, Viewed
+
+import html
 
 
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
@@ -25,28 +27,21 @@ async def send_slow(tg_id, announcements):
                 stmt = insert(Viewed).values(announcement_id=announcement.id, user_id=tg_id)
                 await session.execute(stmt)
                 await session.commit()
-                await bot.send_message(chat_id=tg_id,
-                                       text=f"<b>{announcement.title}</b>\n"
+                await bot.send_photo(
+                                        chat_id=tg_id,
+                                        photo=announcement.img_url,
+                                        caption=f"<b>{announcement.title}</b>\n"
                                             f"<i>{announcement.price} ₽</i>\n"
-                                            f"{announcement.description}\n\n"
-                                            f"<i>{announcement.publication_date}</i>"
+                                            f"<a href=\'{announcement.url}\'>ссылка</a>\n\n"
+                                            f"{announcement.status}"
                                        )
-                print(
-                    {
-                        "title": announcement.title,
-                        "price": announcement.price,
-                        "description": announcement.description,
-                        "publication_date": announcement.publication_date,
-                        "url": announcement.url
-                    }
-                )
                 await asyncio.sleep(2)
 
 
 async def collect_announcements():
     while True:
         async with async_session_maker() as session:
-            stmt = select(ParserTask.id).where(ParserTask.status == "active")
+            stmt = select(ParserTask.id).where(ParserTask.status != "inactive")
             tasks = [task[0] for task in (await session.execute(stmt)).all()]
 
             for task in tasks:
@@ -62,7 +57,7 @@ async def collect_announcements():
 
 async def main():
     loop = asyncio.get_event_loop()
-    # loop.create_task(collect_announcements())
+    loop.create_task(collect_announcements())
     dp.include_routers(router)
     await dp.start_polling(bot)
 
