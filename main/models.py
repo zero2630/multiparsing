@@ -19,7 +19,8 @@ class Base(DeclarativeBase):
 class Announcement(Base):
     __tablename__ = "announcement"
     id: Mapped[int] = mapped_column(primary_key=True, unique=True)
-    publication_date: Mapped[date] = mapped_column(Date, nullable=True)
+    # publication_date: Mapped[date] = mapped_column(Date, nullable=True)
+    publication_date: Mapped[str] = mapped_column(String(100), nullable=True)
     title: Mapped[str] = mapped_column(String(500))
     price: Mapped[float] = mapped_column(Float, nullable=True)
     description: Mapped[str] = mapped_column(Text, nullable=True)
@@ -45,6 +46,24 @@ class UserToTask(Base):
     id: Mapped[int] = mapped_column(primary_key=True, unique=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("bot_user.telegram_id"))
     task_id: Mapped[int] = mapped_column(ForeignKey("parser_task.id"))
+    uniq_val: Mapped[str] = mapped_column(String(50), unique=True)
+    created_at: Mapped[date] = mapped_column(Date, server_default=func.now())
+
+
+class AnnouncementToTask(Base):
+    __tablename__ = "announcement_to_task"
+    id: Mapped[int] = mapped_column(primary_key=True, unique=True)
+    announcement_id: Mapped[int] = mapped_column(ForeignKey("announcement.id"))
+    task_id: Mapped[int] = mapped_column(ForeignKey("parser_task.id"))
+    uniq_val: Mapped[str] = mapped_column(String(50), unique=True)
+    created_at: Mapped[date] = mapped_column(Date, server_default=func.now())
+
+
+class Viewed(Base):
+    __tablename__ = "viewed"
+    id: Mapped[int] = mapped_column(primary_key=True, unique=True)
+    announcement_id: Mapped[int] = mapped_column(ForeignKey("announcement.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("bot_user.telegram_id"))
     created_at: Mapped[date] = mapped_column(Date, server_default=func.now())
 
 

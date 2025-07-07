@@ -1,9 +1,10 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 main = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="создать поиск")],
-        [KeyboardButton(text="stop")],
+        [KeyboardButton(text="мои подписки")],
     ],
     resize_keyboard=True,
 )
@@ -26,6 +27,28 @@ price_lims = ReplyKeyboardMarkup(
     ],
     resize_keyboard=True,
 )
+
+
+region = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="Москва")],
+        [KeyboardButton(text="отмена")],
+    ],
+    resize_keyboard=True,
+)
+
+
+last_time = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="День назад")],
+        [KeyboardButton(text="Неделю назад")],
+        [KeyboardButton(text="Месяц назад")],
+        [KeyboardButton(text="Без срока")],
+        [KeyboardButton(text="отмена")],
+    ],
+    resize_keyboard=True,
+)
+
 
 
 cancel = ReplyKeyboardMarkup(
