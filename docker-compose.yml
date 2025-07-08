@@ -3,6 +3,7 @@ services:
     image: postgres:14.11
     env_file:
       - .env
+    container_name: db_container
     command: -p 5433
     expose:
       - 5433
@@ -22,19 +23,6 @@ services:
     command: [ "/multiparsing/app.sh" ]
     volumes:
       - .:/app
-
-  domclick:
-    build:
-      context: .
-    env_file:
-      - .env
-    container_name: domclick_parser
-    depends_on:
-      - db
-      - app
-    command: [ "/multiparsing/domclick.sh" ]
-    volumes:
-      - .:/domclick
 
   avito:
     build:

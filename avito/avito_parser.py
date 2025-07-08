@@ -140,15 +140,11 @@ class AvitoParser:
 --header 'Upgrade-insecure-requests:  1' \
 --header 'User-agent:  Mozilla/5.0 (Linux; Android 4.4.2; Nexus 4 Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.114 Mobile Safari/537.36' --compressed"
 
-        print(query)
-
         res = subprocess.run(
             query, shell=True, stdout=subprocess.PIPE, encoding="utf-8"
         )
         txt = res.stdout
-        print(txt)
         json_content = json.loads(txt)
-        print(json_content)
 
         return json_content
 
@@ -180,7 +176,7 @@ class AvitoParser:
             if item["type"] == "item":  # проверка что это именно товар, а не услуга
                 if (item["type"] == "item" and "за услугу" not in item["value"]["price"]):
                     item_val = item["value"]
-                    url = 'https://avito.ru' + item_val['uri']
+                    url = 'https://avito.ru' + item_val['uri'][:item_val['uri'].find("?")]
                     async with async_session_maker() as session:
                         stmt = insert(Announcement).values(
                             title=item_val['title'],
